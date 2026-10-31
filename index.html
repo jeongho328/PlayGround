@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b1024" />
+  <meta name="description" content="Build & Blast — a turn-based artillery match where cute worms build battle forts." />
+  <title>BUILD &amp; BLAST — Worms Royale</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b1024'/%3E%3Cpath d='M32 10c11 0 17 7 14 15l-5 12c-3 9-9 15-10 22H21c2-10-1-17-6-24-6-9-5-18 4-23 3-2 8-2 13-2Z' fill='%23ff9f1c'/%3E%3Ccircle cx='25' cy='23' r='4' fill='%2310162b'/%3E%3Ccircle cx='38' cy='23' r='4' fill='%2310162b'/%3E%3Cpath d='M20 12h26l-3-5H23l-3 5Z' fill='%23ffe66d'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game" aria-label="Build and Blast battlefield"></canvas>
+    <div class="screen-grain" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+
+    <header id="hud" class="hud" aria-hidden="true">
+      <div class="team-card team-a" id="teamACard">
+        <div class="team-stripe"></div>
+        <div class="team-emblem" aria-hidden="true">
+          <svg viewBox="0 0 44 44"><path d="M22 4c8 0 12 5 10 10l-3 8c-2 6-6 11-7 16h-7c1-7-1-12-4-17C8 15 8 8 14 5c2-1 5-1 8-1Z" fill="currentColor"/><circle cx="17" cy="13" r="3.2" fill="#10162b"/><circle cx="26" cy="13" r="3.2" fill="#10162b"/><circle cx="18" cy="12.2" r="1" fill="#fff"/><circle cx="27" cy="12.2" r="1" fill="#fff"/><path d="M14 5h17l-2-3H16l-2 3Z" fill="#ffe66d"/></svg>
+        </div>
+        <div class="team-main">
+          <div class="team-topline">
+            <span class="team-name"><span class="tn-full">SUNSET SQUAD</span><span class="tn-short">SUNSET</span></span>
+            <span class="team-hp" id="teamAHP">200</span>
+          </div>
+          <div class="team-worms" id="teamAWorms"></div>
+        </div>
+      </div>
+
+      <div class="match-card">
+        <div class="round-label" id="roundLabel">ROUND 1</div>
+        <div class="timer-ring" id="timerRing">
+          <svg viewBox="0 0 54 54" aria-hidden="true">
+            <circle class="timer-track" cx="27" cy="27" r="23"></circle>
+            <circle class="timer-fill" id="timerArc" cx="27" cy="27" r="23"></circle>
+          </svg>
+          <span id="timerText">60</span>
+        </div>
+        <div class="wind-pill" id="windPill"><span class="wind-arrow" id="windArrow">←</span><b id="windText">12</b><span class="wind-unit">km/h</span></div>
+      </div>
+
+      <div class="team-card team-b" id="teamBCard">
+        <div class="team-stripe"></div>
+        <div class="team-emblem" aria-hidden="true">
+          <svg viewBox="0 0 44 44"><path d="M22 4c8 0 12 5 10 10l-3 8c-2 6-6 11-7 16h-7c1-7-1-12-4-17C8 15 8 8 14 5c2-1 5-1 8-1Z" fill="currentColor"/><circle cx="17" cy="13" r="3.2" fill="#10162b"/><circle cx="26" cy="13" r="3.2" fill="#10162b"/><circle cx="18" cy="12.2" r="1" fill="#fff"/><circle cx="27" cy="12.2" r="1" fill="#fff"/><path d="M14 5h17l-2-3H16l-2 3Z" fill="#c084fc"/></svg>
+        </div>
+        <div class="team-main">
+          <div class="team-topline">
+            <span class="team-name"><span class="tn-full">STORM SYNDICATE</span><span class="tn-short">STORM</span></span>
+            <span class="team-hp" id="teamBHP">200</span>
+          </div>
+          <div class="team-worms" id="teamBWorms"></div>
+        </div>
+      </div>
+    </header>
+
+    <div id="banner" class="banner" aria-live="polite">
+      <span class="banner-kicker" id="bannerKicker">TURN 1</span>
+      <span class="banner-title" id="bannerTitle">YOUR TURN</span>
+      <span class="banner-sub" id="bannerSub">Build cover, then blast the Syndicate.</span>
+    </div>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
+
+    <div class="field-hints" id="fieldHints">
+      <div class="aim-hint" id="aimHint"><span class="mouse-dot"></span> DRAG TO AIM · RELEASE TO BLAST</div>
+      <button class="sound-btn" id="soundBtn" aria-label="Toggle sound" title="Sound on/off">
+        <svg class="icon-on" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4V9Z" fill="currentColor"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="icon-off" viewBox="0 0 24 24"><path d="M4 9h4l5-4v14l-5-4H4V9Z" fill="currentColor"/><path d="m16 9 5 6m0-6-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="help-btn" id="helpBtn" aria-label="How to play" title="How to play">?</button>
+    </div>
+
+    <div class="touch-move" id="touchMove" aria-hidden="true">
+      <button class="move-btn" id="btnLeft" aria-label="Move left"><svg viewBox="0 0 24 24"><path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="move-btn" id="btnRight" aria-label="Move right"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button class="move-btn jump" id="btnJump" aria-label="Jump"><svg viewBox="0 0 24 24"><path d="M12 19V6m0 0-6 6m6-6 6 6" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+
+    <footer class="controls" id="controls">
+      <div class="active-profile">
+        <div class="profile-portrait" id="profilePortrait">
+          <svg viewBox="0 0 44 44"><path d="M22 4c8 0 12 5 10 10l-3 8c-2 6-6 11-7 16h-7c1-7-1-12-4-17C8 15 8 8 14 5c2-1 5-1 8-1Z" fill="currentColor"/><circle cx="17" cy="13" r="3.2" fill="#10162b"/><circle cx="26" cy="13" r="3.2" fill="#10162b"/><circle cx="18" cy="12.2" r="1" fill="#fff"/><circle cx="27" cy="12.2" r="1" fill="#fff"/><path d="M14 5h17l-2-3H16l-2 3Z" fill="#ffe66d"/></svg>
+        </div>
+        <div class="profile-copy">
+          <div class="profile-top"><span id="activeName">BISCUIT</span><span class="profile-hp" id="activeHP">100</span></div>
+          <div class="profile-bars">
+            <div class="mini-bar hp"><i id="activeHPBar"></i></div>
+            <div class="mini-bar fuel"><i id="activeFuelBar"></i></div>
+          </div>
+          <div class="profile-label"><span>HEALTH</span><span>MOVE FUEL</span></div>
+        </div>
+        <div class="material-pill" id="materialPill">
+          <svg viewBox="0 0 24 24"><path d="M4 7h16v10H4z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 11h16M9 7v10M15 7v10" stroke="currentColor" stroke-width="1.4"/></svg>
+          <b id="matCount">60</b>
+          <span>MATS</span>
+        </div>
+      </div>
+
+      <div class="hotbar-wrap">
+        <div class="hotbar" id="weaponBar"></div>
+        <div class="hotbar build" id="buildBar" hidden></div>
+        <div class="hotbar-tip" id="hotbarTip">1–3 SELECT · DRAG TO AIM</div>
+      </div>
+
+      <div class="action-stack">
+        <button class="mode-btn" id="modeBtn"><span class="mode-icon" id="modeIcon"></span><span id="modeLabel">BUILD</span><kbd>B</kbd></button>
+        <button class="end-btn" id="endBtn">END TURN</button>
+      </div>
+    </footer>
+
+    <div class="start-screen overlay" id="startScreen">
+      <div class="start-glow" aria-hidden="true"></div>
+      <div class="start-inner">
+        <div class="start-badge"><span></span> TURN-BASED ARTILLERY ROYALE</div>
+        <h1 class="logo" aria-label="Build and Blast">
+          <span class="logo-line one"><span class="logo-build">BUILD</span><span class="logo-amp">&amp;</span></span>
+          <span class="logo-line two"><span class="logo-blast">BLAST</span></span>
+        </h1>
+        <p class="start-tag">Worms with a blueprint. <b>Build the fort. Blow up theirs.</b></p>
+        <div class="start-features">
+          <span><i class="dot orange"></i> DESTRUCTIBLE TERRAIN</span>
+          <span><i class="dot blue"></i> 3-MATERIAL BUILDING</span>
+          <span><i class="dot purple"></i> 2v2 SQUAD BATTLE</span>
+        </div>
+        <div class="start-actions">
+          <button id="startBtn" class="start-btn"><span>START GAME</span><i>▶</i></button>
+          <button id="howBtn" class="how-btn">HOW TO PLAY</button>
+        </div>
+        <div class="start-foot">
+          <span><kbd>A</kbd><kbd>D</kbd> MOVE</span>
+          <span><kbd>SPACE</kbd> JUMP</span>
+          <span><kbd>B</kbd> BUILD</span>
+          <span><kbd>DRAG</kbd> AIM &amp; FIRE</span>
+        </div>
+      </div>
+      <div class="start-ticker" aria-hidden="true"><span>SUPPLY DROPS INBOUND</span><span>•</span><span>STORM SURGE EACH 2 ROUNDS</span><span>•</span><span>MATS REGEN EVERY TURN</span><span>•</span><span>SUPPLY DROPS INBOUND</span></div>
+    </div>
+
+    <div class="overlay help-screen hidden" id="helpScreen">
+      <div class="help-panel">
+        <button class="close-btn" id="helpClose" aria-label="Close help">×</button>
+        <div class="help-kicker">FIELD MANUAL</div>
+        <h2>BUILD SMART.<br /><span>BLAST HARDER.</span></h2>
+        <div class="help-grid">
+          <section>
+            <h3><i>01</i> MOVE &amp; AIM</h3>
+            <p>Walk with <kbd>A</kbd>/<kbd>D</kbd>, jump with <kbd>Space</kbd>. Drag anywhere on the battlefield to set angle and power, then release to fire. Watch the wind — it bends every rocket.</p>
+            <div class="help-keys"><kbd>A</kbd><kbd>D</kbd> move <kbd>SPACE</kbd> jump <kbd>DRAG</kbd> fire</div>
+          </section>
+          <section>
+            <h3><i>02</i> BUILD A FORT</h3>
+            <p>Press <kbd>B</kbd> to flip into build mode. Snap walls, floors, and ramps onto the grid near your worm. Wood is cheap, brick is tougher, metal is a bunker. Ramps are climbable.</p>
+            <div class="help-keys"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> piece <kbd>4</kbd> material <kbd>R</kbd> ramp direction</div>
+          </section>
+          <section>
+            <h3><i>03</i> WIN THE MATCH</h3>
+            <p>Wipe out both Syndicate worms before they wipe you out. Shoot supply crates for bonus mats. Every two rounds the storm surge swallows the low ground, so build upward.</p>
+            <div class="help-keys"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd> weapons <kbd>ENTER</kbd> end turn</div>
+          </section>
+        </div>
+        <div class="help-tier">
+          <span><b>BAZOOKA</b> — all-round blast</span>
+          <span><b>GRENADE</b> — bounces, 2.2s fuse</span>
+          <span><b>PUMP</b> — shreds builds up close</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="rotate-hint" id="rotateHint">TURN YOUR PHONE FOR THE FULL BATTLEFIELD</div>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
